@@ -1,0 +1,27 @@
+<?php
+// check if value was posted
+// include database and object file
+	include_once '../class/config.php';
+	include_once '../class/group.php';
+
+	// get database connection
+	$database = new Config();
+	$db = $database->getConnection();
+
+	// prepare group object
+	$group = new Group($db);
+	
+	// set grope id to be deleted
+	$group->id = isset($_GET['id']) ? $_GET['id'] : die('Need group ID');
+	
+	// delete the group
+	if($group->delete()){
+		echo "<script>location.href='index.php'</script>";
+	}
+	
+	// if unable to delete the product
+	else{
+		echo "<script>alert('Failed to Deleted Data')</script>";
+		
+	}
+?>
