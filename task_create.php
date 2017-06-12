@@ -132,40 +132,6 @@ function formate_date($date_str){
 	return $dateobj;
 }
 
-/*
-function random_image_stop($db)
-{
-	$images = new Image($db);
-
-	$sth = $images->readallimages();
-	$alliamges = $sth->fetchAll(PDO::FETCH_COLUMN, 0);	
-	
-	$stmp = $images->readupimages();									
-	$upimage = $stmp->fetchAll(PDO::FETCH_COLUMN, 0);
-												
-	$stmd = $images->readdownimages();
-	$downimage = $stmd->fetchAll(PDO::FETCH_COLUMN, 0);
-												
-	$rest_image = array_diff($alliamges,$upimage,$downimage);
-	
-	//var_dump($rest_image);
-	//return;									
-	//print_r($rest_image);
-	
-	if(count($rest_image) > 0){
-		mt_srand( (double)microtime() * 1000000 );
-    	$num = array_rand($rest_image);
-	
-    	return $rest_image[$num];
-	}else{
-		mt_srand( (double)microtime() * 1000000 );
-    	$num = array_rand($alliamges);
-	
-    	return $alliamges[$num];
-	}
-}
-*/
-
 // set your default timezone
 //date_default_timezone_set('Asia/Manila');
 
@@ -253,232 +219,226 @@ function random_image_stop($db)
         </div>
         <!-- /.box-header -->
         <div class="box-body">
-          <div class="row">
+        <div class="row">
             <div class="col-md-12">
             <?php
-			
+				if (isset($_POST['savestg'])) {
+					
+					//setting project variable
+					$project->Name = htmlspecialchars($_POST['projectname']);
+					$project->Question = htmlspecialchars($_POST['question']);
+					$project->status = htmlspecialchars($_POST['status']);
 
-			
+					//setting setting variables 
+					$Upload_Deadline = htmlspecialchars($_POST['uploadlast']).' '.htmlspecialchars($_POST['time_uploadlast']);
+					$Judge_Deadline = htmlspecialchars($_POST['judgetime']).' '.htmlspecialchars($_POST['time_judgetime']);
+					$Place_Date_Time = htmlspecialchars($_POST['tradestart']).' '.htmlspecialchars($_POST['time_tradestart']);
+					$Exit_Date_Time = htmlspecialchars($_POST['tradeexit']).' '.htmlspecialchars($_POST['time_tradeexit']);
+					$Notification_Time = htmlspecialchars($_POST['notiftime']).' '.htmlspecialchars($_POST['time_notiftime']);
+					
+					$Time_Zone = htmlspecialchars($_POST['time_zone']);
+					date_default_timezone_set($Time_Zone);
+					$timestamp = date('Y-m-d H:i:s');
+					$project->Date_Time = $timestamp;
+					
+					$project->Upload_Deadline = formate_date($Upload_Deadline);
+					$project->Judge_Deadline = formate_date($Judge_Deadline);
+					$project->Place_Date_Time = formate_date($Place_Date_Time);
+					$project->Exit_Date_Time = formate_date($Exit_Date_Time);
+					$project->Notification_Time = formate_date($Notification_Time);
+					//('Y-m-d H:i:s')
+					
+					$project->Investment = 0;//htmlspecialchars($_POST['investment']);
+					
+					//$pair = htmlspecialchars($_POST['pair']);
+					
+					if(compare_current($project->Judge_Deadline) and 
+						compare_current($project->Upload_Deadline) and 
+						compare_current($project->Place_Date_Time) and
+						compare_current($project->Exit_Date_Time) and 
+						compare_current($project->Notification_Time)){
+							if(compare_dates($project->Upload_Deadline, $project->Judge_Deadline)){
+								if(compare_dates($project->Judge_Deadline, $project->Place_Date_Time)){
+									if(compare_dates($project->Place_Date_Time, $project->Exit_Date_Time)){
+										if(compare_dates($project->Exit_Date_Time, $project->Notification_Time)){
+											try{
+												$pair = 1;
+												//if($pair == 1){
+												$img_num_viewer = 1;
+												//}else{
+												//	$img_num_viewer = count($_POST['viewers']); 
+												//	echo $img_num_viewer;
+												//}
+											
+												if(check_image($db, $img_num_viewer)){ 
+													
+													$db->beginTransaction();
+													
+													$project->Upload_Deadline = $Upload_Deadline;
+													$project->Judge_Deadline = $Judge_Deadline;
+													$project->Place_Date_Time = $Place_Date_Time;
+													$project->Exit_Date_Time = $Exit_Date_Time;
+													$project->Notification_Time = $Notification_Time;
+													
+													
+													$projectid = $project->create();
+													
+													$projectviewers = $_POST['viewers'];
+													for ($v = 0; $v < count($projectviewers); $v++) {
+														
+														$viewer = new ViewerGroup($db);
+														$viewer->viewer_id = $projectviewers[$v];
+														$viewer->project_id = $projectid;
+														$viewer->created = $timestamp;
+														$viewer->create();
+													}
 
-if (isset($_POST['savestg'])) {
-	
-    //setting project variable
-    $project->Name = htmlspecialchars($_POST['projectname']);
-    $project->Question = htmlspecialchars($_POST['question']);
-    $project->status = htmlspecialchars($_POST['status']);
+													$projectjudges = $_POST['judges'];
+													for ($j = 0; $j < count($projectjudges); $j++) {
+														
+														$judge = new JudgeGroup($db);
+														$judge->judge_id = $projectjudges[$j];
+														$judge->project_id = $projectid;
+														$judge->created = $timestamp;
+														$judge->create();
+													}
+													
+													$rand_image = random_image($db);
+													//$image_down_pair = random_image($db);
 
-    //setting setting variables 
-    $Upload_Deadline = htmlspecialchars($_POST['uploadlast']).' '.htmlspecialchars($_POST['time_uploadlast']);
-	$Judge_Deadline = htmlspecialchars($_POST['judgetime']).' '.htmlspecialchars($_POST['time_judgetime']);
-    $Place_Date_Time = htmlspecialchars($_POST['tradestart']).' '.htmlspecialchars($_POST['time_tradestart']);
-    $Exit_Date_Time = htmlspecialchars($_POST['tradeexit']).' '.htmlspecialchars($_POST['time_tradeexit']);
-    $Notification_Time = htmlspecialchars($_POST['notiftime']).' '.htmlspecialchars($_POST['time_notiftime']);
-	
-	$Time_Zone = htmlspecialchars($_POST['time_zone']);
-	date_default_timezone_set($Time_Zone);
-	$timestamp = date('Y-m-d H:i:s');
-	$project->Date_Time = $timestamp;
-	
-	$project->Upload_Deadline = formate_date($Upload_Deadline);
-    $project->Judge_Deadline = formate_date($Judge_Deadline);
-    $project->Place_Date_Time = formate_date($Place_Date_Time);
-    $project->Exit_Date_Time = formate_date($Exit_Date_Time);
-    $project->Notification_Time = formate_date($Notification_Time);
-	//('Y-m-d H:i:s')
-	
-    $project->Investment = 0;//htmlspecialchars($_POST['investment']);
-	
-	//$pair = htmlspecialchars($_POST['pair']);
-	
-	if(compare_current($project->Judge_Deadline) and 
-		compare_current($project->Upload_Deadline) and 
-		compare_current($project->Place_Date_Time) and
-		compare_current($project->Exit_Date_Time) and 
-		compare_current($project->Notification_Time)){
-			if(compare_dates($project->Upload_Deadline, $project->Judge_Deadline)){
-				if(compare_dates($project->Judge_Deadline, $project->Place_Date_Time)){
-					if(compare_dates($project->Place_Date_Time, $project->Exit_Date_Time)){
-						if(compare_dates($project->Exit_Date_Time, $project->Notification_Time)){
-							try{
-								$pair = 1;
-								//if($pair == 1){
-								$img_num_viewer = 1;
-								//}else{
-								//	$img_num_viewer = count($_POST['viewers']); 
-								//	echo $img_num_viewer;
-								//}
-							
-								if(check_image($db, $img_num_viewer)){ 
-									
-									$db->beginTransaction();
-									
-									$project->Upload_Deadline = $Upload_Deadline;
-									$project->Judge_Deadline = $Judge_Deadline;
-									$project->Place_Date_Time = $Place_Date_Time;
-									$project->Exit_Date_Time = $Exit_Date_Time;
-									$project->Notification_Time = $Notification_Time;
-									
-									
-									$projectid = $project->create();
-									
-									$projectviewers = $_POST['viewers'];
-									for ($v = 0; $v < count($projectviewers); $v++) {
-										
-										$viewer = new ViewerGroup($db);
-										$viewer->viewer_id = $projectviewers[$v];
-										$viewer->project_id = $projectid;
-										$viewer->created = $timestamp;
-										$viewer->create();
-									}
-
-									$projectjudges = $_POST['judges'];
-									for ($j = 0; $j < count($projectjudges); $j++) {
-										
-										$judge = new JudgeGroup($db);
-										$judge->judge_id = $projectjudges[$j];
-										$judge->project_id = $projectid;
-										$judge->created = $timestamp;
-										$judge->create();
-									}
-									
-									
-									$rand_image = random_image($db);
-									//$image_down_pair = random_image($db);
-									//var_dump($rand_image);
-
-									for($isv = 0; $isv < count($projectviewers); $isv++){
-										if($pair == 0){
-											$rand_image = random_image($db);
-										}
-										
-										for($isj = 0; $isj < count($projectjudges); $isj++){
-											$sketch = new SketchJudgeImage($db); 
-											$sketch->judgeid = $projectjudges[$isj];
-											if($pair == 1){
-												$sketch->imageid = $rand_image[0]['Id'];
-												$sketch->imageup = $rand_image[0]['Image_Path'];
-												$sketch->imagedown = $rand_image[0]['Image_Path2'];	
-											}else{
-												$sketch->imageid = $rand_image[0]['Id'];
-												$sketch->imageup = $rand_image[0]['Image_Path'];
-												$sketch->imagedown = $rand_image[0]['Image_Path2'];
+													for($isv = 0; $isv < count($projectviewers); $isv++){
+														if($pair == 0){
+															$rand_image = random_image($db);
+														}
+														
+														for($isj = 0; $isj < count($projectjudges); $isj++){
+															$sketch = new SketchJudgeImage($db); 
+															$sketch->judgeid = $projectjudges[$isj];
+															if($pair == 1){
+																$sketch->imageid = $rand_image[0]['Id'];
+																$sketch->imageup = $rand_image[0]['Image_Path'];
+																$sketch->imagedown = $rand_image[0]['Image_Path2'];	
+															}else{
+																$sketch->imageid = $rand_image[0]['Id'];
+																$sketch->imageup = $rand_image[0]['Image_Path'];
+																$sketch->imagedown = $rand_image[0]['Image_Path2'];
+															}
+															
+															$sketch->datetime = $timestamp;
+															$sketch->projectid = $projectid;
+															$sketch->veiwerid = $projectviewers[$isv];
+															
+															//var_dump($sketch);
+															$s = $sketch->create();
+														}
+													}
+													
+													$db->commit();
+													
+													//$crudobj->createImageSketch(2,9,11,$timestamp,37,9,9);
+													if (headers_sent()) {
+													?>
+													<meta http-equiv="Refresh" content="2; url=compose.php?to=viewer&pid=<?php echo $projectid; ?>">
+													<?php
+														die("<strong> The task has been created successfully! </strong><br>Please click on this link: <a href='compose.php?to=viewer&pid=".$projectid."'>Compose Massage</a> or click <a href='tasks.php'>All Tasks</a> to view all tasks");
+													}
+													else{
+														exit(header("Location: compose.php?to=viewer&pid=".$projectid));
+													}
+													
+													//exit();
+												}else{
+												?>
+													<div class="alert alert-danger alert-dismissible">
+														<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+														<strong> There was a problem in creating the Task. The images set is empty or all image have been used.
+														<br> Please update the image set before crating a Image Viewing Task! Please click on this link: <a href='image_add.php'>Image</a></strong>
+													</div>
+												<?php
+												}
+												
+											} catch (PDOException $ex) {
+												//Something went wrong rollback!
+												//$db->rollBack();
+												print_r($ex->getMessage());
 											}
-											
-											$sketch->datetime = $timestamp;
-											$sketch->projectid = $projectid;
-											$sketch->veiwerid = $projectviewers[$isv];
-											
-											//var_dump($sketch);
-											$s = $sketch->create();
+
+										}else{
+											?>
+												<div class="alert alert-danger alert-dismissible">
+													<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+													<strong> Feedback Date/Time is less than Notification Date/Time. <br> Please specify the correct Date/Time!</strong>
+												</div>
+											<?php
 										}
+									}else{
+										?>
+											<div class="alert alert-danger alert-dismissible">
+												<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+												<strong> Tread Exit Date/Time is less than Tread Placement Date/Time. <br> Please specify the correct Date/Time!</strong>
+											</div>
+										<?php
 									}
-									
-									$db->commit();
-									
-									//$crudobj->createImageSketch(2,9,11,$timestamp,37,9,9);
-									if (headers_sent()) {
-									?>
-									<meta http-equiv="Refresh" content="2; url=compose.php?to=viewer&pid=<?php echo $projectid; ?>">
-									<?php
-										die("<strong> The task has been created successfully! </strong><br>Please click on this link: <a href='compose.php?to=viewer&pid=".$projectid."'>Compose Massage</a> or click <a href='tasks.php'>All Tasks</a> to view all tasks");
-									}
-									else{
-										exit(header("Location: compose.php?to=viewer&pid=".$projectid));
-									}
-									
-									//exit();
 								}else{
+									?>
+										<div class="alert alert-danger alert-dismissible">
+											<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+											<strong> Tread Placement Date/Time is less than Judging Date/Time. <br> Please specify the correct Date/Time!</strong>
+										</div>
+									<?php
+								}
+							}else{
 								?>
 									<div class="alert alert-danger alert-dismissible">
 										<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-										<strong> There was a problem in creating the Task. The images set is empty or all image have been used.
-										<br> Please update the image set before crating a Image Viewing Task! Please click on this link: <a href='image_add.php'>Image</a></strong>
+										<strong> Judging Date/Time is less than Image Upload Date/Time. <br> Please specify the correct Date/Time!</strong>
 									</div>
 								<?php
-								}
-								
-							} catch (PDOException $ex) {
-								//Something went wrong rollback!
-								//$db->rollBack();
-								print_r($ex->getMessage());
 							}
-
-						}else{
-							?>
-								<div class="alert alert-danger alert-dismissible">
-									<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-									<strong> Feedback Date/Time is less than Notification Date/Time. <br> Please specify the correct Date/Time!</strong>
-								</div>
-							<?php
-						}
 					}else{
 						?>
 							<div class="alert alert-danger alert-dismissible">
 								<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-								<strong> Tread Exit Date/Time is less than Tread Placement Date/Time. <br> Please specify the correct Date/Time!</strong>
+								<strong> All of the Date/Time should be greater than the Current Date/Time. <br> Please specify the correct Date/Time!</strong>
 							</div>
 						<?php
 					}
-				}else{
-					?>
-						<div class="alert alert-danger alert-dismissible">
-							<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-							<strong> Tread Placement Date/Time is less than Judging Date/Time. <br> Please specify the correct Date/Time!</strong>
-						</div>
-					<?php
 				}
-			}else{
-				?>
-					<div class="alert alert-danger alert-dismissible">
-						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-						<strong> Judging Date/Time is less than Image Upload Date/Time. <br> Please specify the correct Date/Time!</strong>
-					</div>
-				<?php
-			}
-	}else{
-		?>
-			<div class="alert alert-danger alert-dismissible">
-				<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-				<strong> All of the Date/Time should be greater than the Current Date/Time. <br> Please specify the correct Date/Time!</strong>
-			</div>
-		<?php
-	}
-}
 			?>
             
              <h4 class="box-title">Task Basic Info</h4>	
             	
             	
-<form id="demo-form2" method="post" data-parsley-validate class="form-horizontal form-label-left">
+					<form id="demo-form2" method="post" data-parsley-validate class="form-horizontal form-label-left">
 
-                                            <div class="form-group">
-                                                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="first-name">Task Name <span class="required">*</span>
-                                                </label>
-                                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                                    <input type="text" name="projectname" id="project-name" required="required" class="form-control col-md-7 col-xs-12">
-                                                </div>
-                                            </div>
+						<div class="form-group">
+							<label class="control-label col-md-3 col-sm-3 col-xs-12" for="first-name">Task Name <span class="required">*</span>
+							</label>
+							<div class="col-md-6 col-sm-6 col-xs-12">
+								<input type="text" name="projectname" id="project-name" required="required" class="form-control col-md-7 col-xs-12">
+							</div>
+						</div>
 
-                                            <div class="form-group">
-                                                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="textarea">Description <span class="required">*</span>
-                                                </label>
-                                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                                    <textarea id="textarea" required="required" name="question" class="form-control col-md-7 col-xs-12"></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
-                                            	<label class="control-label col-md-3 col-sm-3 col-xs-12">Status</label>
-                                            	<div class="col-md-6 col-sm-6 col-xs-12">
-                                            		<div class="btn-group" data-toggle="buttons">
-  														<label class="btn btn-primary active">
-    														<input type="radio" name="status" id="option1" value="1" autocomplete="off" checked> Active
-  														</label>
-  														<label class="btn btn-primary">
-    								   						<input type="radio" name="status" id="option2" value="0" autocomplete="off"> Inactive
-  														</label>
-                                            		</div>
-                                            	</div>
-                                            </div>
+						<div class="form-group">
+							<label class="control-label col-md-3 col-sm-3 col-xs-12" for="textarea">Description <span class="required">*</span>
+							</label>
+							<div class="col-md-6 col-sm-6 col-xs-12">
+								<textarea id="textarea" required="required" name="question" class="form-control col-md-7 col-xs-12"></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3 col-sm-3 col-xs-12">Status</label>
+							<div class="col-md-6 col-sm-6 col-xs-12">
+								<div class="btn-group" data-toggle="buttons">
+									<label class="btn btn-primary active">
+										<input type="radio" name="status" id="option1" value="1" autocomplete="off" checked> Active
+									</label>
+									<label class="btn btn-primary">
+										<input type="radio" name="status" id="option2" value="0" autocomplete="off"> Inactive
+									</label>
+								</div>
+							</div>
+						</div>
                                             <!--<div class="form-group">
                                                 <label class="control-label col-md-3 col-sm-3 col-xs-12">Investment (%) <span class="required"></span>
                                                 </label>
@@ -504,253 +464,240 @@ if (isset($_POST['savestg'])) {
                                             	</div>
                                             </div>-->
 
-                                            <?php
-                                            $viewer = new Viewer($db);
-                                            $judge = new Judge($db);
+						<?php
+						$viewer = new Viewer($db);
+						$judge = new Judge($db);
 
-                                            $stmt = $viewer->readAllViewer();
-                                            $viewernum = $stmt->rowCount();
-                                            $jstmt = $judge->readAllJudge();
-                                            ?>
+						$stmt = $viewer->readAllViewer();
+						$viewernum = $stmt->rowCount();
+						$jstmt = $judge->readAllJudge();
+						?>
 
-											<hr>
-                                            <h4>Task Member</h4>
-                                            <div class="ln_solid"></div>
-                                            <div class="form-group">
-                                                <label class="control-label col-md-3 col-sm-3 col-xs-12">Image Viewers</label>
-                                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                                    <select name="viewers[]" class="js-switch select2_multiple form-control" multiple="multiple" required="required">
-                                                        <?php
-                                                        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                                            extract($row);
-                                                            echo "<option value='{$id}'>{$first_name} &nbsp; {$last_name}</option>";
-                                                        }
-                                                        ?>  
-                                                    </select>
-                                                </div>
-                                            </div>
+						<hr>
+						<h4>Task Member</h4>
+						<div class="ln_solid"></div>
+						<div class="form-group">
+							<label class="control-label col-md-3 col-sm-3 col-xs-12">Image Viewers</label>
+							<div class="col-md-6 col-sm-6 col-xs-12">
+								<select name="viewers[]" class="js-switch select2_multiple form-control" multiple="multiple" required="required">
+									<?php
+									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+										extract($row);
+										echo "<option value='{$id}'>{$first_name} &nbsp; {$last_name}</option>";
+									}
+									?>  
+								</select>
+							</div>
+						</div>
 
-                                            <div class = "form-group">
-                                                <label class = "control-label col-md-3 col-sm-3 col-xs-12">Image Judges</label>
-                                                <div class = "col-md-6 col-sm-6 col-xs-12">
-                                                    <select name = "judges[]" class = "js-switch select2_multiple form-control" multiple = "multiple" required="required">
-                                                        <?php
-                                                        if ($viewernum != 0) {
-                                                            while ($row = $jstmt->fetch(PDO::FETCH_ASSOC)) {
-                                                                extract($row);
-                                                                echo "<option value='{$id}'>{$first_name} &nbsp; {$last_name}</option>";
-                                                            }
-                                                        } else {
-                                                            echo "<option>NO Judge</option>";
-                                                        }
-                                                        ?> 
-                                                    </select>
-                                                </div>
-                                            </div> 
-</div>
-</div>
-<hr>
-<div class="row">
-	<div class="col-md-12">
-   	<h4>Task Time Setting</h4>
-   	<div class="ln_solid"></div>
-  	 </div>          
-  	 <br>                         
-	<div class="col-md-6">
-              <!-- Viewer Sketch Deadline Date -->
-			<?php
-				function tz_list() {
-				  $zones_array = array();
-				  $timestamp = time();
-				  foreach(timezone_identifiers_list() as $key => $zone) {
-					date_default_timezone_set($zone);
-					$zones_array[$key]['zone'] = $zone;
-					$zones_array[$key]['diff_from_GMT'] = 'UTC/GMT ' . date('P', $timestamp);
-				  }
-				  return $zones_array;
-				}
-			?>
-			    <div class="form-group">
-                <label>Time Zone:</label>
-                <select class ="form-control" name="time_zone">
-				<option value="America/New_York">
-					<?php 
-						$timestamp = time();
-						date_default_timezone_set("America/New_York"); 
-						echo 'UTC/GMT ' . date('P', $timestamp);
-					?>
-					&nbsp; - America/New_York
-				</option>
-					<?php foreach(tz_list() as $t) { ?>
-					  <option value="<?php print $t['zone'] ?>">
-						<?php print $t['diff_from_GMT'] . ' - ' . $t['zone'] ?>
-					  </option>
-					<?php } ?>
-				 </select>
-              </div>
-			  
-			  
-			  
-			  
-              <div class="form-group">
-                <label>Sketch Upload Deadline:</label>
-
-                <div class="input-group date">
-                  <div class="input-group-addon">
-                    <i class="fa fa-calendar"></i>
-                  </div>
-                  <input id="uploadlast" name="uploadlast" type="text" class="form-control pull-right" required="required">
-                </div>
-                <!-- /.input group -->
-              </div>
-              <!-- /.Viewer Sketch Deadline Date form group -->
-                            <!-- Viewer Sketch Deadline Date -->
-              <div class="form-group">
-                <label>Judge Deadline *</label>
-
-                <div class="input-group date">
-                  <div class="input-group-addon">
-                    <i class="fa fa-calendar"></i>
-                  </div>
-                  <input id="judgetime" name="judgetime" type="text" class="form-control pull-right" required="required">
-                </div>
-                <!-- /.input group -->
-              </div>
-              <!-- /.Judge Deadline Date form group -->
-              <!-- Trade Time Start -->
-              <div class="form-group">
-                <label>Trade Time Start *</label>
-
-                <div class="input-group date">
-                  <div class="input-group-addon">
-                    <i class="fa fa-calendar"></i>
-                  </div>
-                  <input id="tradestart" name="tradestart" type="text" class="form-control pull-right" required="required">
-                </div>
-                <!-- /.input group -->
-              </div>
-              <!-- /.Trade Time Start form group -->
-              <!-- Trade Exit Time Date -->
-              <div class="form-group">
-                <label>Trade Exit Time *</label>
-
-                <div class="input-group date">
-                  <div class="input-group-addon">
-                    <i class="fa fa-calendar"></i>
-                  </div>
-                  <input id="tradeexit" name="tradeexit"  type="text" class="form-control pull-right" required="required">
-                </div>
-                <!-- /.input group -->
-              </div>
-              <!-- /.Trade Exit Time Date form group -->
-              <!-- Notification Time Date -->
-              <div class="form-group">
-                <label>Notification Time *</label>
-
-                <div class="input-group date">
-                  <div class="input-group-addon">
-                    <i class="fa fa-calendar"></i>
-                  </div>
-                  <input id="notiftime" name="notiftime" type="text" class="form-control pull-right" required="required">
-                </div>
-                <!-- /.input group -->
-              </div>
-              <!-- /.Notification Time * Date form group -->
-    </div>
-    <div class="col-md-6">
-				<div class="form-group"> 
-				<label>&nbsp;</label>
-				<div class="input-group">&nbsp; </div>
-				<div> <br> </div>
+						<div class = "form-group">
+							<label class = "control-label col-md-3 col-sm-3 col-xs-12">Image Judges</label>
+							<div class = "col-md-6 col-sm-6 col-xs-12">
+								<select name = "judges[]" class = "js-switch select2_multiple form-control" multiple = "multiple" required="required">
+									<?php
+									if ($viewernum != 0) {
+										while ($row = $jstmt->fetch(PDO::FETCH_ASSOC)) {
+											extract($row);
+											echo "<option value='{$id}'>{$first_name} &nbsp; {$last_name}</option>";
+										}
+									} else {
+										echo "<option>NO Judge</option>";
+									}
+									?> 
+								</select>
+							</div>
+						</div> 
 				</div>
-    	              <!-- time Picker -->
-              <div class="bootstrap-timepicker">
-                <div class="form-group">
-                  <label>Time:</label>
+			</div>
+		<hr>
+			<div class="row">
+				<div class="col-md-12">
+					<h4>Task Time Setting</h4>
+					<div class="ln_solid"></div>
+				</div>          
+				<br>                         
+				<div class="col-md-6">
+						  <!-- Viewer Sketch Deadline Date -->
+						<?php
+							function tz_list() {
+							  $zones_array = array();
+							  $timestamp = time();
+							  foreach(timezone_identifiers_list() as $key => $zone) {
+								date_default_timezone_set($zone);
+								$zones_array[$key]['zone'] = $zone;
+								$zones_array[$key]['diff_from_GMT'] = 'UTC/GMT ' . date('P', $timestamp);
+							  }
+							  return $zones_array;
+							}
+						?>
+							<div class="form-group">
+							<label>Time Zone:</label>
+							<select class ="form-control" name="time_zone">
+								<option value="America/New_York">
+									<?php 
+										$timestamp = time();
+										date_default_timezone_set("America/New_York"); 
+										echo 'UTC/GMT ' . date('P', $timestamp);
+									?>
+									&nbsp; - America/New_York
+								</option>
+								<?php foreach(tz_list() as $t) { ?>
+								  <option value="<?php print $t['zone'] ?>">
+									<?php print $t['diff_from_GMT'] . ' - ' . $t['zone'] ?>
+								  </option>
+								<?php } ?>
+							 </select>
+						  </div>
+						  
+						  <div class="form-group">
+							<label>Sketch Upload Deadline:</label>
 
-                  <div class="input-group">
-                    <div class="input-group-addon">
-                      <i class="fa fa-clock-o"></i>
-                    </div>
-                     <input id="time_uploadlast" name="time_uploadlast" type="text" class="form-control timepicker">
-                  </div>
-                  <!-- /.input group -->
-                </div>
-                <!-- /.form group -->
-              </div>
-               <div class="bootstrap-timepicker">
-                <div class="form-group">
-                  <label>Time:</label>
+							<div class="input-group date">
+								<div class="input-group-addon">
+									<i class="fa fa-calendar"></i>
+								</div>
+								<input id="uploadlast" name="uploadlast" type="text" class="form-control pull-right" required="required">
+							</div>
+							<!-- /.input group -->
+						  </div>
+						  <!-- /.Viewer Sketch Deadline Date form group -->
+										<!-- Viewer Sketch Deadline Date -->
+						  <div class="form-group">
+							<label>Judge Deadline *</label>
 
-                  <div class="input-group">
-                    <div class="input-group-addon">
-                      <i class="fa fa-clock-o"></i>
-                    </div>
-                     <input id="time_judgetime" name="time_judgetime" type="text" class="form-control timepicker">
-                  </div>
-                  <!-- /.input group -->
-                </div>
-                <!-- /.form group -->
-              </div>
-               <div class="bootstrap-timepicker">
-                <div class="form-group">
-                  <label>Time:</label>
-
-                  <div class="input-group">
-                    <div class="input-group-addon">
-                      <i class="fa fa-clock-o"></i>
-                    </div>
-                     <input id="time_tradestart" name="time_tradestart" type="text" class="form-control timepicker">
-                  </div>
-                  <!-- /.input group -->
-                </div>
-                <!-- /.form group -->
-              </div>
-               <div class="bootstrap-timepicker">
-                <div class="form-group">
-                  <label>Time:</label>
-
-                  <div class="input-group">
-                    <div class="input-group-addon">
-                      <i class="fa fa-clock-o"></i>
-                    </div>
-                     <input id="time_tradeexit" name="time_tradeexit" type="text" class="form-control timepicker">
-                  </div>
-                  <!-- /.input group -->
-                </div>
-                <!-- /.form group -->
-              </div>
-               <div class="bootstrap-timepicker">
-                <div class="form-group">
-                  <label>Time:</label>
-
-                  <div class="input-group">
-                    <div class="input-group-addon">
-                      <i class="fa fa-clock-o"></i>
-                    </div>
-                     <input id="time_notiftime" name="time_notiftime" type="text" class="form-control timepicker">
-                  </div>
-                  <!-- /.input group -->
-                </div>
-                <!-- /.form group -->
-              </div>
-    </div>
-</div>
-<hr>
-          <div class="row">
+							<div class="input-group date">
+								<div class="input-group-addon">
+								<i class="fa fa-calendar"></i>
+								</div>
+								<input id="judgetime" name="judgetime" type="text" class="form-control pull-right" required="required">
+							</div>
+							<!-- /.input group -->
+						  </div>
+						  <!-- /.Judge Deadline Date form group -->
+						  <!-- Trade Time Start -->
+						  <div class="form-group">
+							<label>Trade Time Start *</label>
+							<div class="input-group date">
+								<div class="input-group-addon">
+								<i class="fa fa-calendar"></i>
+								</div>
+								<input id="tradestart" name="tradestart" type="text" class="form-control pull-right" required="required">
+							</div>
+							<!-- /.input group -->
+						  </div>
+						  <!-- /.Trade Time Start form group -->
+						  <!-- Trade Exit Time Date -->
+						  <div class="form-group">
+							<label>Trade Exit Time *</label>
+							<div class="input-group date">
+							  <div class="input-group-addon">
+								<i class="fa fa-calendar"></i>
+							  </div>
+							  <input id="tradeexit" name="tradeexit"  type="text" class="form-control pull-right" required="required">
+							</div>
+							<!-- /.input group -->
+						  </div>
+						  <!-- /.Trade Exit Time Date form group -->
+						  <!-- Notification Time Date -->
+						  <div class="form-group">
+							<label>Notification Time *</label>
+							<div class="input-group date">
+							  <div class="input-group-addon">
+								<i class="fa fa-calendar"></i>
+							  </div>
+							  <input id="notiftime" name="notiftime" type="text" class="form-control pull-right" required="required">
+							</div>
+							<!-- /.input group -->
+						  </div>
+						  <!-- /.Notification Time * Date form group -->
+					</div>
+						<div class="col-md-6">
+							<div class="form-group"> 
+								<label>&nbsp;</label>
+								<div class="input-group">&nbsp; </div>
+							<div> <br> </div>
+							</div>
+								  <!-- time Picker -->
+						  <div class="bootstrap-timepicker">
+							<div class="form-group">
+							  <label>Time:</label>
+							  <div class="input-group">
+								<div class="input-group-addon">
+								  <i class="fa fa-clock-o"></i>
+								</div>
+								<input id="time_uploadlast" name="time_uploadlast" type="text" class="form-control timepicker">
+							  </div>
+							  <!-- /.input group -->
+							</div>
+							<!-- /.form group -->
+						  </div>
+						   <div class="bootstrap-timepicker">
+							<div class="form-group">
+							  <label>Time:</label>
+							  <div class="input-group">
+									<div class="input-group-addon">
+									  <i class="fa fa-clock-o"></i>
+									</div>
+								<input id="time_judgetime" name="time_judgetime" type="text" class="form-control timepicker">
+							  </div>
+							  <!-- /.input group -->
+							</div>
+							<!-- /.form group -->
+						  </div>
+						   <div class="bootstrap-timepicker">
+							<div class="form-group">
+							  <label>Time:</label>
+							  <div class="input-group">
+									<div class="input-group-addon">
+									  <i class="fa fa-clock-o"></i>
+									</div>
+								<input id="time_tradestart" name="time_tradestart" type="text" class="form-control timepicker">
+							  </div>
+							  <!-- /.input group -->
+							</div>
+							<!-- /.form group -->
+						  </div>
+						   <div class="bootstrap-timepicker">
+							<div class="form-group">
+							  <label>Time:</label>
+							  <div class="input-group">
+									<div class="input-group-addon">
+									  <i class="fa fa-clock-o"></i>
+									</div>
+								<input id="time_tradeexit" name="time_tradeexit" type="text" class="form-control timepicker">
+							  </div>
+							  <!-- /.input group -->
+							</div>
+							<!-- /.form group -->
+						  </div>
+						   <div class="bootstrap-timepicker">
+							<div class="form-group">
+							  <label>Time:</label>
+							  <div class="input-group">
+									<div class="input-group-addon">
+									  <i class="fa fa-clock-o"></i>
+									</div>
+									<input id="time_notiftime" name="time_notiftime" type="text" class="form-control timepicker">
+							  </div>
+							  <!-- /.input group -->
+							</div>
+							<!-- /.form group -->
+						  </div>
+				</div>
+			</div>
+			<hr>
+			<div class="row">
             <div class="col-md-12">                               
-              
-                                     <div class = "ln_solid"></div>
-                                            <div class = "form-group">
-                                                <div class = "col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
-                                                    
-                                                    <button name = "savestg" type = "submit" class = "btn btn-success">Create Task</button>
-                                                	<button type = "submit" class = "btn btn-primary">Cancel</button>
-                                                </div>
-                                            </div>
+			<div class = "ln_solid"></div>
+			<div class = "form-group">
+				<div class = "col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+					
+					<button name = "savestg" type = "submit" class = "btn btn-success">Create Task</button>
+					<button type = "submit" class = "btn btn-primary">Cancel</button>
+				</div>
+			</div>
 
-                                        </form>
-          
+			</form>
             <!-- /.col -->
           </div>
           <!-- /.row -->
