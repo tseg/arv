@@ -427,11 +427,21 @@
 											?>
 										</td>
 										<td>
-											
-											<a onclick="window.location.href='task_edit.php?edit_id=<?php print($ppid); ?>'" class="btn btn-info btn-xs"><i class="fa fa-pencil"></i> Edit </a>
-											<!--<a href="task_delete.php?delete_id=<?php print($ppid); ?>" class="btn btn-danger btn-xs"  ><i class="fa fa-trash-o"></i> Delete </a>-->
-											
-											<a class="delete_project btn btn-danger btn-xs" data-id="<?php echo $ppid; ?>" href="javascript:void(0)"><i class="fa fa-trash-o"></i> Delete </a>
+											<div class="btn-group">
+												<button type="button" class="btn btn-success">View</button>
+												<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+													<span class="caret"></span>
+													<span class="sr-only">Toggle Dropdown</span>
+												</button>
+												<ul class="dropdown-menu" role="menu">
+													<li><a href="task_clone.php?clone_id=<?php print($ppid); ?>">Clone</a></li>
+													<li><a href="task_edit.php?edit_id=<?php print($ppid); ?>">Edit</a></li>
+													<li><a data-id="<?php echo $ppid; ?>" href="javascript:void(0)">Delete</a></li>
+												</ul>
+											</div>
+											<!--<a onclick="window.location.href='task_clone.php?edit_id=<?php //print($ppid); ?>'" class="btn btn-primary btn-xs"><i class="fa fa-pencil"></i> Clone </a>
+											<a onclick="window.location.href='task_edit.php?edit_id=<?php //print($ppid); ?>'" class="btn btn-info btn-xs"><i class="fa fa-pencil"></i> Edit </a>
+											<a class="delete_project btn btn-danger btn-xs" data-id="<?php //echo $ppid; ?>" href="javascript:void(0)"><i class="fa fa-trash-o"></i> Delete </a>-->
 					
 										</td>
 									</tr>

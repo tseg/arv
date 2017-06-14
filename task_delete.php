@@ -55,6 +55,6 @@ $project = new Project($db);
 				echo "Project is deleted successfully but there some things left";
 			}
 		}else{
-			echo "Projectis is Not Deleted Successfully ...";
+			echo "Project is Not Deleted Successfully ...";
 		}
 	}
